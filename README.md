@@ -1,4 +1,5 @@
 ![NPM Version](https://img.shields.io/npm/v/extract-rme-monsters)
+[![Node.js Package](https://github.com/rafalolszewski94/extract-rme-monsters/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/rafalolszewski94/extract-rme-monsters/actions/workflows/npm-publish.yml)
 
 # Extract RME monsters to XML
 
