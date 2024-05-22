@@ -21,6 +21,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: "Automated Version Bump"
+        id: version-bump
+        uses: "phips28/gh-action-bump-version@master"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
