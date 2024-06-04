@@ -21,14 +21,30 @@ npm i extract-rme-monsters
 
 ## Usage
 
+#### Monsters
+
 Single directory
 
 ```bash
-generate-monsters-rme-xml /my-ot/data-otservbr-global/monster
+generate-monsters-rme-xml monsters /my-ot/data-otservbr-global/monster
 ```
 
 Multiple directories
 
 ```bash
-generate-monsters-rme-xml /my-ot/data-otservbr-global/monster /my-ot/data-canary/monster
+generate-monsters-rme-xml monsters /my-ot/data-otservbr-global/monster /my-ot/data-canary/monster
+```
+
+#### NPCs
+
+Single directory
+
+```bash
+generate-monsters-rme-xml npcs /my-ot/data-otservbr-global/npc
+```
+
+Multiple directories
+
+```bash
+generate-monsters-rme-xml npcs /my-ot/data-otservbr-global/npc /my-ot/data-canary/npc
 ```
