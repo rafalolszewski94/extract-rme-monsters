@@ -1,28 +1,11 @@
-#!/usr/bin/env node
-
-import fs from "fs";
-import path from "path";
+import { promises as fs } from "fs";
 import xml2js from "xml2js";
 import chalk from "chalk";
-
-// Function to recursively find .lua files in the directory
-function findLuaFiles(dir, fileList = []) {
-  const files = fs.readdirSync(dir);
-  files.forEach((file) => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat.isDirectory()) {
-      findLuaFiles(filePath, fileList);
-    } else if (filePath.endsWith(".lua")) {
-      fileList.push(filePath);
-    }
-  });
-  return fileList;
-}
+import { findLuaFiles } from "../utils/index.js";
 
 // Function to extract mType and outfit data from a .lua file
-function extractMonsterData(filePath) {
-  const data = fs.readFileSync(filePath, "utf8");
+async function extractMonsterData(filePath) {
+  const data = await fs.readFile(filePath, "utf8");
 
   // Remove Lua comments from the file
   const filteredData = data.replace(/--.*(?:\n|$)/g, "");
@@ -32,6 +15,7 @@ function extractMonsterData(filePath) {
 
   if (!mTypeMatch || !outfitMatch) {
     console.log(
+      "\n",
       chalk.yellow(`No valid mType or outfit found in file: ${filePath}`)
     );
     return null;
@@ -55,6 +39,7 @@ function extractMonsterData(filePath) {
 
   // Check for looktypeex and set looktype to 0 if it exists
   if ("looktypeex" in outfit) {
+    outfit["lookitem"] = outfit.looktypeex;
     delete outfit.looktypeex;
     outfit["looktype"] = "0";
   }
@@ -64,26 +49,27 @@ function extractMonsterData(filePath) {
     outfit["looktype"] = "0";
   }
 
-  console.log(
-    chalk.green(
-      `Extracted monster: ${name} with outfit: ${JSON.stringify(outfit)}`
-    )
-  );
+  // console.log(
+  //   chalk.green(
+  //     `Extracted monster: ${name} with outfit: ${JSON.stringify(outfit)}`
+  //   )
+  // );
   return { name, outfit };
 }
 
 // Function to merge monsters from multiple directories and remove duplicates
-function mergeAndDeduplicateMonsters(dirs) {
+async function mergeAndDeduplicateMonsters(dirs) {
   const allMonsters = new Map(); // Using a Map to automatically handle deduplication
-  dirs.forEach((dir) => {
-    const luaFiles = findLuaFiles(dir);
-    luaFiles.forEach((file) => {
-      const monsterData = extractMonsterData(file);
+
+  for (const dir of dirs) {
+    const luaFiles = await findLuaFiles(dir);
+    for (const file of luaFiles) {
+      const monsterData = await extractMonsterData(file);
       if (monsterData) {
         allMonsters.set(monsterData.name, monsterData);
       }
-    });
-  });
+    }
+  }
   return [...allMonsters.values()];
 }
 
@@ -101,6 +87,7 @@ function createXML(monsters) {
           return { $: attrs };
         } catch (error) {
           console.error(
+            "\n",
             chalk.red(
               `Error creating XML for monster ${chalk.bold(monster.name)}: ${
                 error.message
@@ -116,32 +103,18 @@ function createXML(monsters) {
 }
 
 // Main function to process the directories and generate the XML
-function generateMonsterXML(inputDirs, outputFile) {
-  const monsters = mergeAndDeduplicateMonsters(inputDirs);
+export async function generateMonsterXML(
+  inputDirs,
+  outputFile = "monsters.xml"
+) {
+  const monsters = await mergeAndDeduplicateMonsters(inputDirs);
 
   if (monsters.length === 0) {
-    console.error(
-      chalk.red("No monsters found. XML file will not be created.")
-    );
-    return;
+    throw Error("No monsters found. XML file will not be created.");
   }
 
   const xml = createXML(monsters);
-  fs.writeFileSync(outputFile, xml, "utf8");
-  console.log(chalk.blue(`XML file has been generated at ${outputFile}`));
+  await fs.writeFile(outputFile, xml, "utf8");
+
+  return outputFile;
 }
-
-// Example usage
-const inputDirs = process.argv.slice(2);
-const outputFile = "monsters.xml";
-
-if (inputDirs.length === 0) {
-  console.error(
-    chalk.red(
-      "Please provide at least one input directory as a command line argument."
-    )
-  );
-  process.exit(1);
-}
-
-generateMonsterXML(inputDirs, outputFile);
